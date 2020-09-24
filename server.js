@@ -25,8 +25,12 @@ app.prepare().then(() => {
         return handle(req, res)
     })
 
-    server.get('/home', (req, res) => {
-        return app.render(req, res, '/home', {})
+    server.get('/new-arrivals', (req, res) => {
+        return app.render(req, res, '/new-arrivals', {})
+    })
+
+    server.get('/sale', (req, res) => {
+        return app.render(req, res, '/sale', {})
     })
 
     server.get('/brand/:name', (req, res) => {

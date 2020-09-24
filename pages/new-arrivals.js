@@ -7,17 +7,17 @@ import MasonryLayout from 'react-masonry-layout'
 import AwesomeDebouncePromise from 'awesome-debounce-promise';
 const repackDebounced = AwesomeDebouncePromise(() => (true), 50);
 import Layout from '../src/layout'
-import Sticky from 'react-stickynode';
 import nextCookie from "next-cookies";
+import Sticky from 'react-stickynode';
 import Router from "next/dist/client/router";
+import {withAuthSync} from "../utils/auth";
 
-export default class Brand extends Component {
+class Homepage extends Component {
     state = { originalData: [], dataLeft: [], sites: [], data: [], hasMore: true, width: '300px', filterBy: 1, stickyNav: true, fullyMounted: false }
-    static async getInitialProps(ctx) {
-        const { query } = ctx
-        const { token } = nextCookie(ctx)
 
-        return { token, brandName: query.name }
+    static async getInitialProps(ctx) {
+        const { token } = nextCookie(ctx)
+        return { token }
     }
 
     async fetchData() {
@@ -25,18 +25,18 @@ export default class Brand extends Component {
         if (this.props.token) {
             headers['Authorization'] = 'Token ' + this.props.token
         }
-        let data = []
-        let sites
 
-        data = await axios.get(`${config.domain}/backend/api/by-brand-name/${this.props.brandName}?page=0&site_type=${this.state.filterBy}`, { withCredentials: true, headers })
-        console.log(data)
+        let data = []
+        data = await axios.get(`${config.domain}/backend/api/homepage-data?page=0&site_type=1`, { withCredentials: true, headers })
         if (!data.data) {
             return Router.push('/login')
         }
+        data = shuffle(data.data.data)
+        let dataLeft = [] // not used but i wont go trhough the code and check what would it broke
+
+        let sites
         sites = await axios.get(`${config.domain}/backend/api/sites`)
         sites = sites.data.data
-        data = data.data.data
-        let dataLeft = [] // not used but i wont go trhough the code and check what would it broke
 
         this.setState({ originalData: data, dataLeft, sites, dataPage: 1 }, this.loadMoreImages)
         this.props.toggleLoaded(true)
@@ -46,9 +46,8 @@ export default class Brand extends Component {
         this.props.toggleLoaded(false)
 
         await this.fetchData()
-
-        this.props.toggleLoaded(true)
     }
+
 
     initOwlCarousel() {
         var timer = setInterval(function () {
@@ -83,11 +82,10 @@ export default class Brand extends Component {
         }
     }
 
-
     loadMoreImages = async () => {
         let data = this.getNextImageBatch()
 
-        if (data.length <= this.state.data.length + 20) {
+        if (this.state.originalData.length <= this.state.data.length + 20) {
             await this.loadMoreData()
             data = this.getNextImageBatch()
         }
@@ -95,7 +93,13 @@ export default class Brand extends Component {
         this.setState({ data: this.state.data.concat(data.slice(this.state.data.length, this.state.data.length + 20)) }, this.mount)
     }
 
-    getNextImageBatch = () => this.state.originalData
+    getNextImageBatch = () => {
+        // return this.state.originalData.filter(x => {
+        //     const site = this.state.sites.find(y => (y.id === x.site_id))
+        //     return site.type === this.state.filterBy
+        // })
+        return this.state.originalData
+    }
 
     loadMoreData = async () => {
         if (this.state.isLoadingData)
@@ -107,16 +111,17 @@ export default class Brand extends Component {
         if (this.props.token) {
             headers['Authorization'] = 'Token ' + this.props.token
         }
-        let data = await axios.get(`${config.domain}/backend/api/by-brand-name/${this.props.brandName}?page=${this.state.dataPage}&site_type=${this.state.filterBy}`, { withCredentials: true, headers })
+        let data = await axios.get(`${config.domain}/backend/api/homepage-data?page=${this.state.dataPage}&site_type=1`, { withCredentials: true, headers })
         data = shuffle(data.data.data)
 
         this.setState({ originalData: this.state.originalData.concat(data), dataPage: this.state.dataPage + 1, isLoadingData: false }, this.mount)
     }
 
-
     componentWillUnmount() {
         window.removeEventListener('resize', this.handleResize);
+        this.props.toggleLoaded(false)
     }
+
 
     handleResize = () => {
         const parentWidth = document.querySelector(".wrapper").getBoundingClientRect().width
@@ -128,6 +133,7 @@ export default class Brand extends Component {
             document.documentElement.clientWidth
         );
         console.log(`Size: ${parentWidth}px`)
+        console.log(`Browser Width: ${browserWidth}px`)
         let width
         if (browserWidth <= 768) {
             width = parentWidth
@@ -154,7 +160,7 @@ export default class Brand extends Component {
             this.initOwlCarousel()
             window.scrollTo({ top: 0, behavior: 'smooth' });
             await this.fetchData()
-            this.loadMoreImages()
+            await this.loadMoreImages()
         }
     }
 
@@ -162,23 +168,33 @@ export default class Brand extends Component {
         await repackDebounced()
         this.repackItems()
     }
+
+    updateUser = (user) => {
+        this.setState({ user })
+    }
+
+    reachedBottom = () => {
+        const end = (document.body.scrollHeight - document.body.offsetHeight);
+        return document.body.scrollTop >= end;
+    }
+
+
     render() {
-        const site = this.state.sites.find(site => site.name.toLowerCase() === this.props.brandName.toLowerCase())
-        const brandName = site ? site.display_name : this.props.brandName
         if (!this.props.loaded) {
             return <div id="page-loader" className="show-logo">
                 <span className="loader-icon bullets-jump"><span /><span /><span /></span>
             </div>
         }
-        return (
-            <Layout brandName={brandName}>
-                <div>
-                    <div id="page-content">
 
+        return (
+            <Layout updateUser={this.updateUser}>
+                <div>
+
+                    <div id="page-content">
                         <div id="hero-and-body">
                             <section id="page-body" className="brand-body is-hidden-tablet">
                                 <div className="columns is-multiline is-mobile is-hidden-tablet">
-                                    <Link href={"/new-arrivals"}>
+                                    <Link href={"/"}>
                                         <a className="is-hidden-mobile column is-narrow is-marginless">
                                             <img style={{ border: '1px solid #64F0E7', padding: '17px' }} src={'../static/assets/arrow_back.png'} />
                                         </a>
@@ -187,92 +203,101 @@ export default class Brand extends Component {
                                         <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '10px', paddingBottom: '20px' }}>
                                             <span
                                                 onClick={() => {
-                                                    if (this.state.filterBy !== 1) {
-                                                        this.props.toggleLoaded(false)
-                                                        this.setState({ filterBy: 1, data: [] })
+                                                    if (Router.pathname !== 'new-arrivals') {
+                                                        Router.push('/new-arrivals')
                                                     }
                                                 }
                                                 }
-                                                style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black', fontWeight: `${this.state.filterBy === 1 ? '500' : ''}` }}
+                                                style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black', fontWeight: '500' }}
                                             // className={`${this.state.filterBy === 1 && "has-text-weight-semibold"}`}
                                             >
                                                 New Arrivals</span>
 
                                             <span
                                                 onClick={() => {
-                                                    if (this.state.filterBy !== 2) {
-                                                        this.props.toggleLoaded(false)
-                                                        this.setState({ filterBy: 2, data: [] })
+                                                    if (Router.pathname !== 'sale') {
+                                                        Router.push('/sale')
                                                     }
                                                 }
                                                 }
-                                                style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black', fontWeight: `${this.state.filterBy === 2 ? '500' : ''}` }}
+                                                style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black' }}
                                             // className={`${this.state.filterBy === 2 && "has-text-weight-semibold"}`}
                                             >Sale</span>
+                                            <span>{' | '}</span>
+                                            <span><Link href="/my-brands"><a style={{ color: '#64F0E7', marginRight: '10px', fontSize: '20px', marginLeft: '10px' }}>my Brands</a></Link></span>
                                         </div>
                                     </div>
                                 </div>
                             </section>
                             {/* PAGEBODY */}
-                            <section id="page-body" className="brand-body">
-                                {/*<div className="spacer-small" />*/}
-                                <Sticky enabled={this.state.stickyNav} top={0} bottomBoundary={0} innerZ={1500} activeClass={'sticky-active'} releasedClass={'sticky-released'} >
-                                    {/*<div style={{backgroundColor: 'white', zIndex: '99999999 !important', width: '101%', paddingTop: '20px'}}>*/}
-                                    <div className="sticky-container" style={{ backgroundColor: 'white', zIndex: '99999999 !important', width: '98%' }}>
-
-
-                                        <div className="columns is-multiline is-mobile is-hidden-mobile">
-                                            <div>
-                                                <Link href={"/new-arrivals"}>
-                                                    <a className="is-hidden-mobile column is-narrow is-marginless">
-                                                        <img style={{ border: '1px solid #64F0E7', padding: '17px' }} src={'../static/assets/arrow_back.png'} />
-                                                    </a>
-                                                </Link>
-                                            </div>
-                                            <div style={{ marginLeft: '10px', marginTop: '15px' }} className="column is-paddingless brand-text">
-                                                <div>
-                                                    <span style={{ fontSize: '40px', fontWeight: 500, color: 'black' }}>{brandName}</span>
-                                                </div>
-                                                <div>
-                                                    <span
-                                                        onClick={() => {
-                                                            if (this.state.filterBy !== 1) {
-                                                                this.props.toggleLoaded(false)
-                                                                this.setState({ filterBy: 1, data: [] })
-                                                            }
-                                                        }
-                                                        }
-                                                        style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black', fontWeight: `${this.state.filterBy === 1 ? '500' : ''}` }}
-                                                    // className={`${this.state.filterBy === 1 && "has-text-weight-semibold"}`}
-                                                    >
-                                                        New Arrivals</span>
-
-                                                    <span
-                                                        onClick={() => {
-                                                            if (this.state.filterBy !== 2) {
-                                                                this.props.toggleLoaded(false)
-                                                                this.setState({ filterBy: 2, data: [] })
-                                                            }
-                                                        }
-                                                        }
-                                                        style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black', fontWeight: `${this.state.filterBy === 2 ? '500' : ''}` }}
-                                                    // className={`${this.state.filterBy === 2 && "has-text-weight-semibold"}`}
-                                                    >Sale</span>
-                                                </div>
-                                            </div>
+                            {this.props.loaded && ((this.state.data.length === 0 && this.props.loaded && this.state.fullyMounted && this.state.user) &&
+                                <div className="after-register">
+                                    {this.state.filterBy === 1 ? <div>
+                                        <h2>Follow your favorite brands.</h2>
+                                        <h3><Link href={'/my-brands'}><a style={{ textDecoration: 'underline' }}>Click on my Brands to select them.</a></Link></h3>
+                                    </div> :
+                                        <div>
+                                            <h2>Selected brands have no sale styles.</h2>
+                                            <h3><Link href={'/my-brands'}><a style={{ textDecoration: 'underline' }}>Click on my Brands to select additional brands.</a></Link></h3>
                                         </div>
+                                    }
+                                </div>)}
 
-                                    </div>
-                                </Sticky>
+                            {this.props.loaded && ((this.state.data.length === 0 && this.props.loaded && this.state.fullyMounted && !this.state.user) &&
+                                <div className="after-register">
+                                    {this.state.filterBy === 1 ? <div>
+                                        <h2>There are no sale styles.</h2>
+                                    </div> :
+                                        <div>
+                                            <h2>There are no sale styles.</h2>
+                                        </div>
+                                    }
+                                </div>)}
+                            <section id="page-body">
+                                <div className="is-hidden-mobile">
+                                    <Sticky enabled={this.state.stickyNav} top={0} bottomBoundary={0} innerZ={1500} activeClass={'sticky-active'} releasedClass={'sticky-released'} >
+                                        <div className="sticky-container" style={{ backgroundColor: 'white', width: '98%' }}>
+                                            <span
+                                                onClick={() => {
+                                                    if (Router.pathname !== 'new-arrivals') {
+                                                        Router.push('/new-arrivals')
+                                                    }
+                                                }
+                                                }
+                                                style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black' }}
+                                                className={"has-text-weight-bold"}>
+                                                New Arrivals</span>
+
+                                            <span
+                                                onClick={() => {
+                                                    if (Router.pathname !== 'sale') {
+                                                        Router.push('/sale')
+                                                    }
+                                                }
+                                                }
+                                                style={{ cursor: 'pointer', marginRight: '10px', fontSize: '20px', color: 'black' }}
+                                            >Sale</span>
+
+                                            <span>{' | '}</span>
+                                            <span><Link href="/my-brands"><a style={{ color: '#64F0E7', marginRight: '10px', fontSize: '20px', marginLeft: '10px' }}>my Brands</a></Link></span>
+                                            {/*<hr/>*/}
+                                        </div>
+                                    </Sticky>
+                                </div>
+                                <div className="is-hidden-tablet" style={{ height: '20px' }} />
                                 <div className="wrapper">
-                                    {this.props.loaded && (this.state.data.length === 0 && this.state.filterBy === 2) && <div>This Brand has no sale styles for the moment.</div>}
+
                                     <MasonryLayout
                                         ref={instance => this.instance = instance}
                                         id="masonry-layout"
                                         sizes={[{ columns: 1, gutter: 20 }, { mq: '769px', columns: 3, gutter: 20 }, { mq: '1025px', columns: 6, gutter: 20 }]}
-                                        infiniteScroll={() => { this.loadMoreImages() }}
+                                        infiniteScroll={async () => { await this.loadMoreImages() }}
                                         infiniteScrollDistance={400}
                                     >
+
+
+
+
 
                                         {this.state.data.map((product, i) => {
                                             // let height = i % 2 === 0 ? 200 : 100;
@@ -282,7 +307,12 @@ export default class Brand extends Component {
                                                     key={i}
                                                     style={{
                                                         width: this.state.width,
-
+                                                        // height: `${height}px`,
+                                                        // lineHeight: `${height}px`,
+                                                        // color: 'white',
+                                                        // fontSize: '32px',
+                                                        // display: 'block',
+                                                        // background: 'rgba(0,0,0,0.7)'
                                                     }}>
                                                     <a href={product.product_link} target={"_blank"} className="thumb-hover scale">
                                                         <img
@@ -293,7 +323,11 @@ export default class Brand extends Component {
                                                     </a>
                                                     <div className="blog-info">
                                                         <div className="post-meta clearfix">
-
+                                                            <span className="post-cat">
+                                                                <Link prefetch href={`brand?name=${product.name}`} as={`brand/${product.name}`}>
+                                                                    <a>{product.display_name} <span style={{ color: '#64F0E7', marginLeft: '10px' }}>more...</span></a>
+                                                                </Link>
+                                                            </span>
                                                         </div>
                                                         <h4 className="post-name" style={{ marginTop: '0px' }}>
                                                             <a href={product.product_link} target={"_blank"}>{product.title}</a>
@@ -311,6 +345,7 @@ export default class Brand extends Component {
                                         )}
 
                                     </MasonryLayout>
+                                    {/*</div>*/}
                                 </div> {/* END .wrapper */}
                             </section>
                             {/* PAGEBODY */}
@@ -319,8 +354,27 @@ export default class Brand extends Component {
                     </div>
                 </div>
 
+                {/*eslint-disable */}
+                {/* language=CSS */}
+                <style jsx>{`
+                        @media (min-width: 769px) {
+                            .after-register {
+                                margin-top: 80px;
+                                margin-left: 70px;
+                            }
+                        }
+                        @media (max-width: 768px) {
+                            .after-register {
+                                margin-top: 30px;
+                            }
+                        }
 
+					`}</style>
+                {/* eslint-enable */}
             </Layout>
+
         )
     }
 }
+
+export default withAuthSync(Homepage)

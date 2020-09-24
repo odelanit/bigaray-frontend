@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { withRouter } from 'next/router';
+import {useRouter, withRouter} from 'next/router';
 import { FaArrowLeft } from 'react-icons/fa';
 import Router from 'next/router'
 import {useStore, store} from "../hooks/currentUser";
@@ -26,6 +26,7 @@ function getCookie(name) {
 const Layout = props => {
     const [isOpen, toggleMenu] = useState(false);
     const [user, updateUser] = useStore();
+    const router = useRouter();
 
     useEffect( () => {
         let didCancel = false;
@@ -45,7 +46,7 @@ const Layout = props => {
                 if(props.updateUser) {
                     props.updateUser(data.data.data)
                 }
-                updateUser(data.data.data)
+                updateUser(data.data.data);
             } else {
                 updateUser(false)
 
@@ -101,7 +102,7 @@ const Layout = props => {
                                 <ul><li style={{paddingRight: '20px'}}>We embrace styles diversity. Follow all your favorite fashion brands in one place.</li></ul>
                                 <br/>
                                 <ul>
-                                    <li><Link href={"/home"}><a>Home</a></Link></li>
+                                    <li><Link href={"/"}><a>Home</a></Link></li>
                                     <li><Link href={"/my-profile"}><a>my Profile</a></Link></li>
                                     <li><Link prefetch href={"/my-brands"}><a>my Brands</a></Link></li>
 
