@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import Head from 'next/head'
 import Link from 'next/link'
 import {useRouter, withRouter} from 'next/router';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -64,7 +63,7 @@ const Layout = props => {
                 <div className="header-inner clearfix">
                     {(showOnArrow.includes(props.router.asPath) || props.router.asPath.includes("/brand/") ) &&
                     <div className="is-hidden-tablet" >
-                        <Link href={"/"}><span style={{position: 'absolute', top: '20px', left: '30px'}}><FaArrowLeft size={'1.6em'} color={'#64F0E7'} /></span></Link>
+                        <Link href={"/new-arrivals"}><span style={{position: 'absolute', top: '20px', left: '30px'}}><FaArrowLeft size={'1.6em'} color={'#64F0E7'} /></span></Link>
                         <div className="has-text-weight-bold" style={{position: 'absolute', top: '17px', left: '60px'}}>{getName(props)}</div>
                     </div>}
                     {props.router.asPath === "/"  &&
@@ -78,13 +77,13 @@ const Layout = props => {
                             <div className="menu-toggle"  style={{overflow: 'inherit'}}>
 
                                 <div className="is-hidden-tablet">
-                                <Link href={'/'}>
+                                <Link href={'/new-arrivals'}>
                                     <a className="is-hidden-mobile" style={{fontSize: '3rem', paddingTop: '5px', fontWeight: 500, color: 'black'}}>{isOpen ? 'Stylaray' : 'S'}</a>
                                 </Link>
                                 </div>
 
                                 <div className="is-hidden-mobile" style={{paddingBottom: '30px'}}>
-                                    <Link href={'/'}>
+                                    <Link href={'/new-arrivals'}>
                                         <a className="is-hidden-mobile" style={{fontSize: '3rem', paddingTop: '5px', fontWeight: 500, color: 'black'}}>{isOpen ? 'Stylaray' : 'S'}</a>
                                     </Link>
                                 </div>
@@ -102,9 +101,9 @@ const Layout = props => {
                                 <ul><li style={{paddingRight: '20px'}}>We embrace styles diversity. Follow all your favorite fashion brands in one place.</li></ul>
                                 <br/>
                                 <ul>
-                                    <li><Link href={"/"}><a>Home</a></Link></li>
-                                    <li><Link href={"/my-profile"}><a>my Profile</a></Link></li>
-                                    <li><Link prefetch href={"/my-brands"}><a>my Brands</a></Link></li>
+                                    <li><Link href={"/new-arrivals"}><a>Home</a></Link></li>
+                                    <li><Link href={"/my-profile"}><a>My Profile</a></Link></li>
+                                    <li><Link prefetch href={"/my-brands"}><a>My Brands</a></Link></li>
 
                                     <li><Link prefetch href={"/contact"}><a>Contact</a></Link></li>
                                     {user ? <li onClick={() => {

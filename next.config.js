@@ -3,10 +3,12 @@ const { PHASE_DEVELOPMENT_SERVER } = require('next/constants')
 const nextOffline = require('next-offline')
 const path = require('path')
 const withPlugins = require('next-compose-plugins')
+const withPWA = require('next-pwa');
+const runtimeCaching = require('next-pwa/cache')
 
 module.exports = withPlugins(
     [
-        [nextOffline, ['!', PHASE_DEVELOPMENT_SERVER]], [withCSS]
+        [nextOffline, ['!', PHASE_DEVELOPMENT_SERVER]], [withCSS, withPWA]
     ],
     {
         webpack: config => {
@@ -17,6 +19,9 @@ module.exports = withPlugins(
             ]
             return config
         },
+        pwa: {
+            dest: 'public'
+        }
         // Other Next.js config here...
     }
 )

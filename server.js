@@ -46,11 +46,10 @@ app.prepare().then(() => {
     })
 
     server.get('/service-worker.js', (req, res) => {
-        const parsedUrl = parse(req.url, true)
-        const { pathname } = parsedUrl
-        const filePath = join(__dirname, '.next', pathname)
+        const filePath = join(__dirname, '.next/service-worker.js')
         console.log(19, filePath)
-        return app.serveStatic(req, res, filePath)
+        // return app.serveStatic(req, res, filePath)
+        res.sendFile(filePath);
     })
 
     server.get('/my-profile', (req, res) => {

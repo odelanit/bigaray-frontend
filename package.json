@@ -5,7 +5,7 @@
     "dev": "node server.js",
     "build": "next build",
     "export": "next export",
-    "start": "SET NODE_ENV=production && node server.js"
+    "start": "NODE_ENV=production node server.js"
   },
   "dependencies": {
     "@zeit/next-css": "^1.0.1",
@@ -27,6 +27,7 @@
     "next-compose-plugins": "^2.1.1",
     "next-cookies": "^1.1.2",
     "next-offline": "^3.3.7",
+    "next-pwa": "^3.1.4",
     "node-sass": "4.14.0",
     "pretty-checkbox": "^3.0.3",
     "pretty-checkbox-react": "^1.0.5",
@@ -39,6 +40,7 @@
     "react-masonry-layout": "^0.4.0",
     "react-select": "^2.4.2",
     "react-stickynode": "^2.1.1",
+    "react-switch": "^5.0.1",
     "styled-jsx-plugin-sass": "0.2.0"
   },
   "license": "ISC",
