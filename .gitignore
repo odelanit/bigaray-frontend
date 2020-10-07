@@ -70,3 +70,5 @@ fabric.properties
 
 node_modules
 .next
+/package-lock.json
+/debug.log
